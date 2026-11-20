@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { SiteHeader } from "../components/site-header";
 import { clinic } from "../lib/site";
 import "./globals.css";
+import "./subpages.css";
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +24,6 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {children}
         <footer className="site-footer shell">
           <span className="footer-name">{clinic.name} <span aria-hidden="true">·</span> {clinic.city}</span>
-          <span>Projekt demonstracyjny fikcyjnego gabinetu.</span>
         </footer>
       </body>
     </html>

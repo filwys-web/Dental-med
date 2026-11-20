@@ -49,16 +49,13 @@ export default function Home() {
         <div className="hero-media">
           <Image
             src={consultation}
-            alt="Pacjentka rozmawia ze stomatolożką i ogląda model zębów"
+            alt="Stomatolożka pokazuje pacjentowi model zębów podczas konsultacji"
             fill
             preload
             placeholder="blur"
-            sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1340px) 51vw, 670px"
+            quality={85}
+            sizes="(max-width: 760px) calc(100vw - 32px), (max-width: 1160px) 710px, (max-width: 1350px) 60vw, 810px"
           />
-          <div className="photo-caption">
-            <span className="photo-caption-dot" aria-hidden="true" />
-            Zdjęcie poglądowe
-          </div>
         </div>
       </section>
 

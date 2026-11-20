@@ -1,6 +1,6 @@
 # Dental Med
 
-Projekt demonstracyjny fikcyjnego gabinetu stomatologicznego we Wrocławiu. Strona główna działa w Next.js (App Router), React i TypeScript. Menu prowadzi do adresów przygotowanych pod przyszłe podstrony. Rezerwacja wizyt pojawi się w kolejnym etapie.
+Serwis fikcyjnego gabinetu stomatologicznego. Projekt wykorzystuje Next.js (App Router), React i TypeScript. Zawiera stronę główną, zespół, cennik, kontakt i FAQ o pierwszej wizycie. Formularz kontaktowy i rezerwacja wizyt nie wysyłają danych.
 
 ## Uruchomienie
 
@@ -13,6 +13,13 @@ npm run dev
 
 Strona lokalna działa pod adresem http://localhost:3000. Przed wdrożeniem uruchom `npm run lint`, `npm run typecheck` i `npm run build`.
 
-## Zdjęcie
+## Zdjęcia
 
-Zdjęcie konsultacji pochodzi z [Pexels, autor Anna Shvets](https://www.pexels.com/photo/cheerful-young-female-dentist-discussing-tooth-structure-with-client-3845757/) i jest użyte zgodnie z [licencją Pexels](https://www.pexels.com/license/). Plik WebP jest przechowywany w `public/zdjecia/`.
+Fotografie pochodzą z Pexels i są użyte zgodnie z [licencją Pexels](https://www.pexels.com/license/). Nazwiska i biogramy na stronie zespołu są fikcyjne. Zdjęcia są przechowywane w `public/zdjecia/` w formacie WebP.
+
+- [Konsultacja stomatologiczna, Tima Miroshnichenko](https://www.pexels.com/photo/a-dentist-explaining-to-a-patient-using-a-dental-cast-5355723/)
+- [Portret 5355860, Tima Miroshnichenko](https://www.pexels.com/photo/female-dentist-in-white-uniform-5355860/)
+- [Portret 6812464, Pavel Danilyuk](https://www.pexels.com/photo/photo-of-a-dentist-holding-a-tool-6812464/)
+- [Portret 31043310, Manuel Toledo](https://www.pexels.com/photo/confident-female-dentist-in-professional-attire-31043310/)
+- [Portret 6627836, Kaboompics](https://www.pexels.com/photo/portrait-of-smiling-dentist-in-clinic-6627836/)
+- [Portret 19963164, Tessy Agbonome](https://www.pexels.com/photo/portrait-of-smiling-doctor-19963164/)
