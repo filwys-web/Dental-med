@@ -31,6 +31,14 @@ Strona `/umow-wizyte` korzysta z tabeli `appointments` w Supabase. Schemat i ogr
 
 Ustaw `SUPABASE_URL` (adres projektu) i `SUPABASE_SECRET_KEY` (klucz Secret projektu) w środowisku serwera. Lokalnie użyj `.env.local`, a na Vercelu ustaw klucz jako zmienną typu Secret. Endpoint dostępności przekazuje wyłącznie identyfikatory lekarzy i zajęte przedziały.
 
+## Panel recepcji
+
+Panel `/recepcja` korzysta z tej samej tabeli `appointments` co formularz publiczny. Przed wdrożeniem zastosuj migrację `reception_appointment_management`. Jej ograniczenie wykluczające blokuje nakładające się aktywne wizyty jednego lekarza, także przy równoczesnej rezerwacji online.
+
+Panel wymaga `SUPABASE_PUBLISHABLE_KEY` oraz konta Supabase Auth z `app_metadata.clinic_role` równym `receptionist`. Konto można utworzyć przez panel administracyjny Supabase lub przez jednorazową aktywację. Aktywację włącza serwerowa zmienna `RECEPTION_INVITATION` z adresem `email`, skrótem SHA-256 kodu `hash` i czasem wygaśnięcia `expiresAt` w milisekundach od epoki Unix. Kod powinien mieć 32 losowe bajty zakodowane szesnastkowo i trafiać wyłącznie do osoby aktywującej konto. Link ma ścieżkę `/recepcja?aktywacja=1#kod=<kod>`.
+
+Kliknięcie wolnego pola otwiera formularz wizyty. Kliknięcie istniejącej wizyty pozwala zmienić datę i godzinę lub ją odwołać. Odwołanie zapisuje datę anulowania i zwalnia czas w terminarzu oraz w rezerwacji online.
+
 ## Zdjęcia
 
 Fotografie pochodzą z Pexels i są użyte zgodnie z [licencją Pexels](https://www.pexels.com/license/). Nazwiska i biogramy na stronie zespołu są fikcyjne. Zdjęcia są przechowywane w `public/zdjecia/` w formacie WebP.
