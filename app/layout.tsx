@@ -1,7 +1,7 @@
 import "@fontsource-variable/manrope";
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
-import { SiteHeader } from "../components/site-header";
+import { SiteLayout } from "../components/site-layout";
 import { clinic } from "../lib/site";
 import "./globals.css";
 import "./subpages.css";
@@ -20,11 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="pl">
       <body>
         <a href="#tresc" className="skip-link">Przejdź do treści</a>
-        <SiteHeader />
-        {children}
-        <footer className="site-footer shell">
-          <span className="footer-name">{clinic.name} <span aria-hidden="true">·</span> {clinic.city}</span>
-        </footer>
+        <SiteLayout>{children}</SiteLayout>
       </body>
     </html>
   );
