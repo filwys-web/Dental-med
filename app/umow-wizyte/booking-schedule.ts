@@ -1,14 +1,16 @@
 import type { dentists } from "../../lib/dentists";
 import { clinicHours } from "../../lib/site";
 
+type DentistId = keyof typeof dentists;
+
 type Treatment = {
   id: string;
   name: string;
   duration: number;
-  dentistIds: (keyof typeof dentists)[];
+  dentistIds: DentistId[];
 };
 
-// Example durations and staff assignments for the demo calendar.
+// Default durations and dentist assignments used for online appointments.
 export const treatments: Treatment[] = [
   { id: "konsultacja", name: "Konsultacja stomatologiczna", duration: 30, dentistIds: ["alicja", "marek"] },
   { id: "kontrola", name: "Wizyta kontrolna", duration: 30, dentistIds: ["alicja", "natalia"] },
@@ -25,6 +27,18 @@ export const treatments: Treatment[] = [
 ];
 
 export type ClinicTime = { day: number; minute: number };
+export type BusyAppointment = { dentistId: DentistId; start: number; end: number };
+
+export function formatBookingDate(day: number) {
+  return new Date(day).toISOString().slice(0, 10);
+}
+
+export function parseBookingDate(date: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return null;
+
+  const day = Date.parse(date);
+  return Number.isFinite(day) && formatBookingDate(day) === date ? day : null;
+}
 
 const clinicTimeFormat = new Intl.DateTimeFormat("pl-PL", {
   timeZone: "Europe/Warsaw",
@@ -67,8 +81,23 @@ export function getTimeSlots(day: number, duration: number, now: ClinicTime) {
 
 const shortestTreatment = Math.min(...treatments.map(({ duration }) => duration));
 
-export function getAvailableTreatments(day: number, now: ClinicTime) {
-  return treatments.filter(({ duration }) => getTimeSlots(day, duration, now).length > 0);
+export function getDentistSlots(
+  day: number,
+  duration: number,
+  now: ClinicTime,
+  dentistId: DentistId,
+  appointments: BusyAppointment[],
+) {
+  const busy = appointments.filter((appointment) => appointment.dentistId === dentistId);
+  return getTimeSlots(day, duration, now).filter(
+    (slot) => !busy.some(({ start, end }) => slot < end && start < slot + duration),
+  );
+}
+
+export function getAvailableTreatments(day: number, now: ClinicTime, appointments: BusyAppointment[]) {
+  return treatments.filter(({ duration, dentistIds }) =>
+    dentistIds.some((id) => getDentistSlots(day, duration, now, id, appointments).length > 0),
+  );
 }
 
 export function hasAvailableTime(day: number, now: ClinicTime) {

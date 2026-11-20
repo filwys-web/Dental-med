@@ -1,15 +1,17 @@
 "use client";
 
 import { CalendarDays, ChevronLeft, ChevronRight, Clock } from "lucide-react";
-import { useState, useSyncExternalStore, type FormEvent } from "react";
+import { useEffect, useState, useSyncExternalStore, type FormEvent } from "react";
 import { dentists } from "../../lib/dentists";
 import { clinic, formatClockTime } from "../../lib/site";
 import {
+  formatBookingDate,
   getAvailableTreatments,
   getClinicTime,
-  getTimeSlots,
+  getDentistSlots,
   hasAvailableTime,
   isClinicWorkday,
+  type BusyAppointment,
   type ClinicTime,
 } from "./booking-schedule";
 
@@ -46,6 +48,7 @@ export function BookingCalendar() {
   const currentMinute = useSyncExternalStore(subscribeToClock, getMinuteSnapshot, getServerSnapshot);
   const [visibleMonth, setVisibleMonth] = useState<number | null>(null);
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [isBooking, setIsBooking] = useState(false);
 
   if (currentMinute === null) {
     return <p className="booking-loading" role="status">Wczytywanie kalendarza…</p>;
@@ -66,13 +69,13 @@ export function BookingCalendar() {
           <button
             type="button"
             aria-label="Poprzedni miesiąc"
-            disabled={month === earliestMonth}
+            disabled={isBooking || month === earliestMonth}
             onClick={() => setVisibleMonth(shiftMonth(month, -1))}
           >
             <ChevronLeft size={21} aria-hidden="true" />
           </button>
           <p aria-live="polite">{monthFormat.format(month)}</p>
-          <button type="button" aria-label="Następny miesiąc" onClick={() => setVisibleMonth(shiftMonth(month, 1))}>
+          <button type="button" aria-label="Następny miesiąc" disabled={isBooking} onClick={() => setVisibleMonth(shiftMonth(month, 1))}>
             <ChevronRight size={21} aria-hidden="true" />
           </button>
         </div>
@@ -97,7 +100,7 @@ export function BookingCalendar() {
                 aria-current={day === now.day ? "date" : undefined}
                 aria-pressed={day === selectedDay}
                 aria-controls="booking-details"
-                disabled={!available}
+                disabled={isBooking || !available}
                 onClick={() => setSelectedDay(day)}
               >
                 {index + 1}
@@ -114,45 +117,168 @@ export function BookingCalendar() {
           <CalendarDays size={18} aria-hidden="true" />
           {selectedDay === null ? "Wybierz dzień w kalendarzu." : dayFormat.format(selectedDay)}
         </p>
-        {selectedDay !== null && <BookingDetails key={selectedDay} day={selectedDay} now={now} />}
+        {selectedDay !== null && <BookingDetails key={selectedDay} day={selectedDay} now={now} onBookingChange={setIsBooking} />}
       </section>
     </div>
   );
 }
 
 type ContactDetails = { name: string; email: string; phone: string };
+type Confirmation = { start: number; end: number; treatment: string; dentist: string };
+type BookingPreview = {
+  requestId: string;
+  contact: ContactDetails;
+  treatmentId: string;
+  dentistId: BusyAppointment["dentistId"];
+  details: Confirmation;
+};
 
-function BookingDetails({ day, now }: { day: number; now: ClinicTime }) {
+function BookingDetails({ day, now, onBookingChange }: { day: number; now: ClinicTime; onBookingChange: (pending: boolean) => void }) {
   const [treatmentId, setTreatmentId] = useState("");
   const [dentistId, setDentistId] = useState("");
   const [startTime, setStartTime] = useState<number | null>(null);
-  const [preview, setPreview] = useState<ContactDetails | null>(null);
+  const [contact, setContact] = useState<ContactDetails>({ name: "", email: "", phone: "" });
+  const [preview, setPreview] = useState<BookingPreview | null>(null);
+  const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingError, setBookingError] = useState("");
+  const [appointments, setAppointments] = useState<BusyAppointment[] | null>(null);
+  const [availabilityError, setAvailabilityError] = useState(false);
+  const [refresh, setRefresh] = useState(0);
 
-  const availableTreatments = getAvailableTreatments(day, now);
+  const date = formatBookingDate(day);
+
+  useEffect(() => {
+    let request: AbortController | undefined;
+
+    async function loadAvailability() {
+      request?.abort();
+      const controller = new AbortController();
+      request = controller;
+
+      try {
+        const response = await fetch(`/api/appointments?date=${date}`, { signal: controller.signal });
+        if (!response.ok) throw new Error("Availability request failed");
+        const result: { appointments: BusyAppointment[] } = await response.json();
+        if (controller.signal.aborted) return;
+        setAppointments(result.appointments);
+        setAvailabilityError(false);
+      } catch {
+        if (!controller.signal.aborted) setAvailabilityError(true);
+      }
+    }
+
+    void loadAvailability();
+    window.addEventListener("focus", loadAvailability);
+    const timer = window.setInterval(loadAvailability, 30_000);
+
+    return () => {
+      request?.abort();
+      window.removeEventListener("focus", loadAvailability);
+      window.clearInterval(timer);
+    };
+  }, [date, refresh]);
+
+  const availableTreatments = appointments ? getAvailableTreatments(day, now, appointments) : [];
   const treatment = availableTreatments.find(({ id }) => id === treatmentId);
-  const dentist = treatment?.dentistIds.find((id) => id === dentistId);
-  const slots = treatment && dentist ? getTimeSlots(day, treatment.duration, now) : [];
+  const availableDentists = treatment && appointments ? treatment.dentistIds.map((id) => ({
+    id,
+    slots: getDentistSlots(day, treatment.duration, now, id, appointments),
+  })).filter(({ slots }) => slots.length > 0) : [];
+  const dentist = availableDentists.find(({ id }) => id === dentistId);
+  const slots = dentist?.slots ?? [];
   const selectedStart = startTime !== null && slots.includes(startTime) ? startTime : null;
+
+  function updateContact(field: keyof ContactDetails, value: string) {
+    setContact((current) => ({ ...current, [field]: value }));
+    setPreview(null);
+  }
 
   function showPreview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (!treatment || !dentist || selectedStart === null || isBooking) return;
 
-    const currentTime = getClinicTime(getMinuteSnapshot());
-    if (!treatment || selectedStart === null || !getTimeSlots(day, treatment.duration, currentTime).includes(selectedStart)) {
-      setPreview(null);
-      return;
-    }
-
-    const fields = new FormData(event.currentTarget);
+    const requestId = preview?.requestId ?? crypto.randomUUID();
     setPreview({
-      name: String(fields.get("name")).trim(),
-      email: String(fields.get("email")).trim(),
-      phone: String(fields.get("phone")).trim(),
+      requestId,
+      contact: { name: contact.name.trim(), email: contact.email.trim(), phone: contact.phone.trim() },
+      treatmentId: treatment.id,
+      dentistId: dentist.id,
+      details: {
+        start: selectedStart,
+        end: selectedStart + treatment.duration,
+        treatment: treatment.name,
+        dentist: dentists[dentist.id].name,
+      },
     });
   }
 
-  if (availableTreatments.length === 0) {
-    return <p className="booking-message" role="status">Wybierz inny dzień, aby zobaczyć dostępne godziny.</p>;
+  async function confirmBooking() {
+    if (!preview || isBooking) return;
+
+    setIsBooking(true);
+    onBookingChange(true);
+    setBookingError("");
+
+    try {
+      const response = await fetch("/api/appointments", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...preview.contact,
+          requestId: preview.requestId,
+          date,
+          treatmentId: preview.treatmentId,
+          dentistId: preview.dentistId,
+          start: preview.details.start,
+        }),
+      });
+
+      if (response.ok) {
+        setConfirmation(preview.details);
+        setContact({ name: "", email: "", phone: "" });
+        setPreview(null);
+        return;
+      }
+
+      const result = await response.json().catch(() => null);
+      setBookingError(result?.message ?? "Nie udało się umówić wizyty. Spróbuj ponownie.");
+      if (response.status === 409) {
+        setStartTime(null);
+        setPreview(null);
+        setRefresh((current) => current + 1);
+      }
+    } catch {
+      setBookingError("Nie udało się sprawdzić wyniku rezerwacji. Ponów próbę.");
+    } finally {
+      setIsBooking(false);
+      onBookingChange(false);
+    }
+  }
+
+  if (confirmation) {
+    return (
+      <div className="booking-summary booking-confirmation" role="status">
+        <h3>Wizyta umówiona</h3>
+        <p>{dayFormat.format(day)}, {formatClockTime(confirmation.start)}–{formatClockTime(confirmation.end)}</p>
+        <p>{confirmation.treatment} · {confirmation.dentist}</p>
+      </div>
+    );
+  }
+
+  if (availabilityError && !appointments) {
+    return (
+      <div className="booking-message">
+        <p role="status">Nie udało się pobrać dostępnych godzin.</p>
+        <button type="button" className="button button-outline" onClick={() => setRefresh((current) => current + 1)}>Spróbuj ponownie</button>
+      </div>
+    );
+  }
+
+  if (!appointments) return <p className="booking-message" role="status">Pobieranie dostępnych godzin…</p>;
+
+  if (availableTreatments.length === 0 && !preview) {
+    return <p className="booking-message" role="status">{bookingError || "Brak wolnych godzin. Wybierz inny dzień."}</p>;
   }
 
   return (
@@ -162,12 +288,14 @@ function BookingDetails({ day, now }: { day: number; now: ClinicTime }) {
           Zabieg
           <select
             value={treatment?.id ?? ""}
+            disabled={isBooking}
             aria-describedby={treatment ? "booking-treatment-duration" : undefined}
             onChange={(event) => {
               setTreatmentId(event.target.value);
               setDentistId("");
               setStartTime(null);
               setPreview(null);
+              setBookingError("");
             }}
           >
             <option value="">Wybierz zabieg</option>
@@ -182,29 +310,32 @@ function BookingDetails({ day, now }: { day: number; now: ClinicTime }) {
       {treatment && (
         <label className="booking-field">
           Lekarz
-          <select value={dentist ?? ""} onChange={(event) => {
+          <select value={dentist?.id ?? ""} disabled={isBooking} onChange={(event) => {
             setDentistId(event.target.value);
             setStartTime(null);
             setPreview(null);
+            setBookingError("");
           }}>
             <option value="">Wybierz lekarza</option>
-            {treatment.dentistIds.map((id) => <option key={id} value={id}>{dentists[id].name}</option>)}
+            {availableDentists.map(({ id }) => <option key={id} value={id}>{dentists[id].name}</option>)}
           </select>
         </label>
       )}
 
+      {startTime !== null && selectedStart === null && !preview && (
+        <p role="status">Wybrana godzina jest już niedostępna. Wybierz inny termin.</p>
+      )}
+
       {dentist && (
-        <fieldset>
+        <fieldset disabled={isBooking}>
           <legend>Godzina rozpoczęcia</legend>
-          {startTime !== null && selectedStart === null && (
-            <p className="booking-message" role="status">Wybrana godzina już minęła. Wybierz kolejną.</p>
-          )}
           <div className="booking-slots">
             {slots.map((slot) => (
               <label className="booking-slot" key={slot}>
                 <input type="radio" name="startTime" value={slot} checked={slot === selectedStart} onChange={() => {
                   setStartTime(slot);
                   setPreview(null);
+                  setBookingError("");
                 }} />
                 <span>{formatClockTime(slot)}</span>
               </label>
@@ -215,21 +346,25 @@ function BookingDetails({ day, now }: { day: number; now: ClinicTime }) {
 
       {treatment && dentist && selectedStart !== null && (
         <>
-          <fieldset className="booking-contacts" onInput={() => setPreview(null)}>
+          <fieldset className="booking-contacts" disabled={isBooking}>
             <legend>Dane kontaktowe</legend>
             <label className="booking-field">
               Imię i nazwisko
-              <input name="name" autoComplete="name" required minLength={2} maxLength={120} pattern={String.raw`.*\S.*`} />
+              <input name="name" value={contact.name} onChange={(event) => updateContact("name", event.target.value)}
+                autoComplete="name" required minLength={2} maxLength={120} pattern={String.raw`.*\S.*`} />
             </label>
             <label className="booking-field">
               Adres e-mail
-              <input name="email" type="email" autoComplete="email" required maxLength={254} />
+              <input name="email" type="email" value={contact.email} onChange={(event) => updateContact("email", event.target.value)}
+                autoComplete="email" required maxLength={254} />
             </label>
             <label className="booking-field">
               Numer telefonu
               <input
                 name="phone"
                 type="tel"
+                value={contact.phone}
+                onChange={(event) => updateContact("phone", event.target.value)}
                 autoComplete="tel"
                 required
                 maxLength={30}
@@ -238,20 +373,25 @@ function BookingDetails({ day, now }: { day: number; now: ClinicTime }) {
               />
             </label>
           </fieldset>
-          <button className="button button-primary booking-preview-button" type="submit">Sprawdź podsumowanie</button>
-          <div aria-live="polite">
-            {preview && (
-              <div className="booking-summary">
-                <h3>Podgląd wizyty</h3>
-                <p>{dayFormat.format(day)}, {formatClockTime(selectedStart)}–{formatClockTime(selectedStart + treatment.duration)}</p>
-                <p>{treatment.name} · {dentists[dentist].name}</p>
-                <p>{preview.name} · {preview.email} · {preview.phone}</p>
-                <p className="booking-summary-note">Dane służą wyłącznie do podglądu w tej przeglądarce.</p>
-              </div>
-            )}
-          </div>
+          <button className="button button-outline booking-preview-button" type="submit" disabled={isBooking}>Sprawdź podsumowanie</button>
         </>
       )}
+      <div aria-live="polite">
+        {preview && (
+          <>
+            <div className="booking-summary">
+              <h3>Podsumowanie wizyty</h3>
+              <p>{dayFormat.format(day)}, {formatClockTime(preview.details.start)}–{formatClockTime(preview.details.end)}</p>
+              <p>{preview.details.treatment} · {preview.details.dentist}</p>
+              <p>{preview.contact.name} · {preview.contact.email} · {preview.contact.phone}</p>
+            </div>
+            <button className="button button-primary booking-confirm-button" type="button" disabled={isBooking} onClick={confirmBooking}>
+              {isBooking ? "Zapisywanie wizyty…" : "Umów wizytę"}
+            </button>
+          </>
+        )}
+      </div>
+      {bookingError && <p className="booking-error" role="alert">{bookingError}</p>}
     </form>
   );
 }

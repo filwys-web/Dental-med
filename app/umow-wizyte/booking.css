@@ -208,9 +208,21 @@
   outline-offset: 2px;
 }
 
-.booking-preview-button {
+.booking-preview-button,
+.booking-confirm-button {
   justify-self: start;
   cursor: pointer;
+}
+
+.booking-confirm-button,
+.booking-confirmation,
+.booking-message .button {
+  margin-top: 12px;
+}
+
+.booking-form button:disabled {
+  opacity: .65;
+  cursor: wait;
 }
 
 .booking-summary {
@@ -231,10 +243,10 @@
   font-size: 14px;
 }
 
-.booking-summary .booking-summary-note {
-  margin-top: 7px;
-  color: var(--muted);
-  font-size: 12px;
+.booking-error {
+  color: #8a2725;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 @media (max-width: 760px) {

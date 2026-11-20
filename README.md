@@ -25,6 +25,12 @@ Formularz na `/kontakt` wysyła wiadomości przez Gmail i Nodemailer. Ustaw poni
 
 Na Vercel zapisz zmienne dla wybranego środowiska i uruchom nowe wdrożenie. Wyślij wiadomość testową z `/kontakt` i sprawdź skrzynkę odbiorczą. Odpowiedź na otrzymaną wiadomość trafi na adres podany w formularzu.
 
+## Rezerwacja wizyt
+
+Strona `/umow-wizyte` korzysta z tabeli `appointments` w Supabase. Schemat i ograniczenie blokujące nakładające się wizyty tego samego lekarza są w `supabase/migrations/`. Zastosuj migrację w bazie przed uruchomieniem formularza.
+
+Ustaw `SUPABASE_URL` (adres projektu) i `SUPABASE_SECRET_KEY` (klucz Secret projektu) w środowisku serwera. Lokalnie użyj `.env.local`, a na Vercelu ustaw klucz jako zmienną typu Secret. Endpoint dostępności przekazuje wyłącznie identyfikatory lekarzy i zajęte przedziały.
+
 ## Zdjęcia
 
 Fotografie pochodzą z Pexels i są użyte zgodnie z [licencją Pexels](https://www.pexels.com/license/). Nazwiska i biogramy na stronie zespołu są fikcyjne. Zdjęcia są przechowywane w `public/zdjecia/` w formacie WebP.

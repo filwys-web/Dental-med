@@ -14,7 +14,7 @@ export default function BookingPage() {
     <main id="tresc" className="content-page shell">
       <PageIntro
         title={booking.label}
-        description="Wybierz termin w kalendarzu i sprawdź podgląd wizyty. Kalendarz pokazuje przykładową dostępność."
+        description="Wybierz termin w kalendarzu, sprawdź podsumowanie i umów wizytę."
       />
       <BookingCalendar />
     </main>
