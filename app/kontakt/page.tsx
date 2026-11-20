@@ -1,7 +1,8 @@
-import { Clock, Mail, MapPin, Phone, Send } from "lucide-react";
+import { Clock, Mail, MapPin, Phone } from "lucide-react";
 import type { Metadata } from "next";
 import { PageIntro } from "../../components/page-intro";
 import { clinic, contact } from "../../lib/site";
+import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
   title: contact.label,
@@ -40,32 +41,7 @@ export default function ContactPage() {
 
         <section className="contact-card contact-form-card" aria-labelledby="wiadomosc">
           <h2 id="wiadomosc">Napisz do nas</h2>
-          <form className="contact-form" aria-describedby="form-status">
-            <div className="contact-form-row">
-              <label>
-                Imię i nazwisko
-                <input type="text" autoComplete="name" placeholder="Anna Nowak" />
-              </label>
-              <label>
-                E-mail
-                <input type="email" autoComplete="email" placeholder="anna@przyklad.pl" />
-              </label>
-            </div>
-            <label>
-              Temat
-              <input type="text" placeholder="W czym możemy pomóc?" />
-            </label>
-            <label>
-              Wiadomość
-              <textarea rows={4} />
-            </label>
-            <div className="contact-form-actions">
-              <button className="button button-primary" type="submit" disabled>
-                Wyślij wiadomość <Send size={17} aria-hidden="true" />
-              </button>
-              <p id="form-status">Wysyłka wiadomości jest obecnie niedostępna.</p>
-            </div>
-          </form>
+          <ContactForm />
         </section>
       </div>
     </main>

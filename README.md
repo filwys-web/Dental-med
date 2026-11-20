@@ -1,6 +1,6 @@
 # Dental Med
 
-Serwis fikcyjnego gabinetu stomatologicznego. Projekt wykorzystuje Next.js (App Router), React i TypeScript. Zawiera stronę główną, zespół, cennik, kontakt i FAQ o pierwszej wizycie. Formularz kontaktowy i rezerwacja wizyt nie wysyłają danych.
+Serwis fikcyjnego gabinetu stomatologicznego. Projekt wykorzystuje Next.js (App Router), React i TypeScript. Zawiera stronę główną, zespół, cennik, kontakt i FAQ o pierwszej wizycie.
 
 ## Uruchomienie
 
@@ -12,6 +12,18 @@ npm run dev
 ```
 
 Strona lokalna działa pod adresem http://localhost:3000. Przed wdrożeniem uruchom `npm run lint`, `npm run typecheck` i `npm run build`.
+
+## Formularz kontaktowy
+
+Formularz na `/kontakt` wysyła wiadomości przez Gmail i Nodemailer. Ustaw poniższe zmienne w Vercel w **Settings → Environment Variables** albo w lokalnym pliku `.env.local`.
+
+| Zmienna | Wartość |
+| --- | --- |
+| `GMAIL_USER` | Adres Gmail używany do wysyłki. |
+| `GMAIL_APP_PASWORD` | [Hasło aplikacji Google](https://support.google.com/accounts/answer/185833) dla tego konta. Wymaga weryfikacji dwuetapowej. Nazwa zmiennej ma jedno `S` w `PASWORD`. |
+| `CONTACT_TO` | Adres skrzynki, która odbiera wiadomości z formularza. |
+
+Na Vercel zapisz zmienne dla wybranego środowiska i uruchom nowe wdrożenie. Wyślij wiadomość testową z `/kontakt` i sprawdź skrzynkę odbiorczą. Odpowiedź na otrzymaną wiadomość trafi na adres podany w formularzu.
 
 ## Zdjęcia
 
