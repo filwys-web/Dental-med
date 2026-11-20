@@ -1,20 +1,22 @@
-import { ArrowLeft } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
+import { PageIntro } from "../../components/page-intro";
 import { booking } from "../../lib/site";
+import { BookingCalendar } from "./booking-calendar";
+import "./booking.css";
 
-export const metadata: Metadata = { title: booking.label };
+export const metadata: Metadata = {
+  title: booking.label,
+  description: "Wybierz dzień, zabieg, lekarza i godzinę w kalendarzu Dental Med.",
+};
 
 export default function BookingPage() {
   return (
-    <main id="tresc" className="section-page shell">
-      <div className="section-card">
-        <h1>{booking.label}</h1>
-        <p>Rezerwacje online są obecnie niedostępne.</p>
-        <Link href="/" className="button button-primary">
-          <ArrowLeft size={18} aria-hidden="true" /> Wróć na stronę główną
-        </Link>
-      </div>
+    <main id="tresc" className="content-page shell">
+      <PageIntro
+        title={booking.label}
+        description="Wybierz termin w kalendarzu i sprawdź podgląd wizyty. Kalendarz pokazuje przykładową dostępność."
+      />
+      <BookingCalendar />
     </main>
   );
 }

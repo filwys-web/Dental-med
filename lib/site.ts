@@ -1,3 +1,15 @@
+export const clinicHours = {
+  weekdays: [1, 2, 3, 4, 5],
+  opensAt: 8 * 60,
+  closesAt: 19 * 60,
+};
+
+export function formatClockTime(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const remainder = String(minutes % 60).padStart(2, "0");
+  return `${hours}:${remainder}`;
+}
+
 export const clinic = {
   name: "Dental Med",
   city: "Wrocław",
@@ -6,7 +18,7 @@ export const clinic = {
   contact: {
     phone: "+48 71 000 00 00",
     email: "recepcja@dental-med.example",
-    hours: "Poniedziałek–piątek, 8:00–19:00",
+    hours: `Poniedziałek–piątek, ${formatClockTime(clinicHours.opensAt)}–${formatClockTime(clinicHours.closesAt)}`,
   },
 };
 

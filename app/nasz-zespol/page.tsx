@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Image from "next/image";
 import { PageIntro } from "../../components/page-intro";
+import { dentists } from "../../lib/dentists";
 import { team } from "../../lib/site";
 import alicja from "../../public/zdjecia/zespol/alicja-radecka.webp";
 import marek from "../../public/zdjecia/zespol/marek-wysocki.webp";
@@ -13,34 +14,29 @@ export const metadata: Metadata = {
   description: "Poznaj pięcioro lekarzy dentystów z zespołu Dental Med.",
 };
 
-const dentists = [
+const profiles = [
   {
-    name: "Alicja Radecka",
-    area: "Stomatologia zachowawcza",
+    ...dentists.alicja,
     bio: "Od 21 lat leczy ubytki i odbudowuje uszkodzone zęby.",
     portrait: alicja,
   },
   {
-    name: "Marek Wysocki",
-    area: "Endodoncja",
+    ...dentists.marek,
     bio: "Ma 17 lat doświadczenia w leczeniu kanałowym, w tym pod mikroskopem.",
     portrait: marek,
   },
   {
-    name: "Natalia Sowińska",
-    area: "Stomatologia dziecięca",
+    ...dentists.natalia,
     bio: "Od 13 lat leczy dzieci i prowadzi wizyty adaptacyjne.",
     portrait: natalia,
   },
   {
-    name: "Tomasz Malinowski",
-    area: "Chirurgia stomatologiczna",
+    ...dentists.tomasz,
     bio: "Od 19 lat wykonuje zabiegi chirurgiczne, w tym usuwanie zębów zatrzymanych.",
     portrait: tomasz,
   },
   {
-    name: "Ewa Domańska",
-    area: "Protetyka i estetyka",
+    ...dentists.ewa,
     bio: "Ma 11 lat doświadczenia w odbudowie uzębienia z użyciem koron i mostów.",
     portrait: ewa,
   },
@@ -54,7 +50,7 @@ export default function TeamPage() {
         description="Poznaj lekarzy, którzy zajmują się leczeniem zębów dzieci i dorosłych w Dental Med."
       />
       <ul className="team-grid" aria-label="Lekarze dentyści">
-        {dentists.map(({ name, area, bio, portrait }) => (
+        {profiles.map(({ name, area, bio, portrait }) => (
           <li className="team-card" key={name}>
             <div className="team-portrait">
               <Image
